@@ -85,12 +85,12 @@ const App = () => {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={{ user, login, logout }}>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthContext.Provider value={{ user, login, logout }}>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Navigate to="/login" />} />
@@ -154,10 +154,10 @@ const App = () => {
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthContext.Provider>
-    </QueryClientProvider>
+          </TooltipProvider>
+        </AuthContext.Provider>
+      </QueryClientProvider>
+    </BrowserRouter>
   );
 };
 

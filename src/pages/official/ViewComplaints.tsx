@@ -1,360 +1,477 @@
 
 import { useState } from "react";
-import OfficialLayout from "@/components/layouts/OfficialLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/App";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
-  Check, 
+  CheckCircle, 
   Clock, 
   AlertTriangle, 
   Search, 
-  Filter, 
-  Eye, 
-  FileText,
-  Calendar,
+  MapPin, 
+  Calendar, 
   User,
-  MapPin
+  Mail as MailIcon, 
+  ArrowUpDown, 
+  Eye
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import OfficialLayout from "@/components/layouts/OfficialLayout";
+import { format, isAfter, isBefore, isToday, subDays } from "date-fns";
 
-// Mock data for complaints
+// Mock complaints data
 const mockComplaints = [
   {
-    id: "c1",
-    title: "Garbage Pile Near Bus Stop",
-    location: "Main Street, Bus Stop #5",
-    description: "Large pile of garbage accumulating near the bus stop. It's been there for at least 3 days.",
+    id: "comp-123",
+    title: "Garbage Overflow",
+    description: "Large pile of garbage on the street corner that hasn't been collected for over a week",
+    location: "123 Main Street, Downtown",
+    dateSubmitted: new Date(2023, 3, 15),
+    status: "inProgress",
+    priority: "medium",
+    imageUrl: "https://images.unsplash.com/photo-1605600659873-d808a13e4fd2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FyYmFnZXxlbnwwfHwwfHx8MA%3D%3D",
+    userId: "user-123",
+    userName: "John Citizen",
+    userContact: "john@example.com",
+    category: "waste"
+  },
+  {
+    id: "comp-124",
+    title: "Pothole Damage",
+    description: "Large pothole causing damage to vehicles",
+    location: "456 Oak Avenue, Uptown",
+    dateSubmitted: new Date(2023, 3, 10),
     status: "pending",
-    date: "2023-04-05",
-    reportedBy: "John Smith",
-    reporterContact: "john.smith@example.com",
-    images: ["/placeholder.svg"]
+    priority: "high",
+    imageUrl: "https://images.unsplash.com/photo-1598368185298-0025252273da?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cG90aG9sZXxlbnwwfHwwfHx8MA%3D%3D",
+    userId: "user-124",
+    userName: "Sarah Johnson",
+    userContact: "sarah@example.com",
+    category: "roads"
   },
   {
-    id: "c2",
-    title: "Broken Street Light",
-    location: "Park Avenue, Near City Mall",
-    description: "Street light is broken causing darkness in the area at night. Creating safety issues.",
-    status: "pending",
-    date: "2023-04-03",
-    reportedBy: "Sarah Johnson",
-    reporterContact: "sarah.j@example.com",
-    images: ["/placeholder.svg"]
-  },
-  {
-    id: "c3",
-    title: "Pothole in Road",
-    location: "Oak Street, Near School",
-    description: "Large pothole in the middle of the road causing traffic problems and potential vehicle damage.",
-    status: "in-progress",
-    date: "2023-03-28",
-    reportedBy: "David Miller",
-    reporterContact: "d.miller@example.com",
-    images: ["/placeholder.svg"]
-  },
-  {
-    id: "c4",
-    title: "Graffiti on Public Wall",
-    location: "River Walk, Near Bridge",
-    description: "Inappropriate graffiti on the public wall. Needs to be cleaned.",
-    status: "in-progress",
-    date: "2023-03-25",
-    reportedBy: "Lisa Anderson",
-    reporterContact: "lisa.a@example.com",
-    images: ["/placeholder.svg"]
-  },
-  {
-    id: "c5",
-    title: "Overgrown Vegetation Blocking Sidewalk",
-    location: "Maple Street, Near Park",
-    description: "Vegetation from empty lot has overgrown and is blocking the sidewalk.",
+    id: "comp-125",
+    title: "Street Light Outage",
+    description: "Several street lights not working on residential block",
+    location: "789 Elm Street, Midtown",
+    dateSubmitted: new Date(2023, 3, 12),
     status: "resolved",
-    date: "2023-03-15",
-    reportedBy: "Robert Wilson",
-    reporterContact: "r.wilson@example.com",
-    images: ["/placeholder.svg"]
+    priority: "medium",
+    imageUrl: "https://images.unsplash.com/photo-1595683363301-1e42d9d404be?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c3RyZWV0JTIwbGlnaHR8ZW58MHx8MHx8fDA%3D",
+    userId: "user-125",
+    userName: "Michael Brown",
+    userContact: "michael@example.com",
+    category: "lighting"
   },
   {
-    id: "c6",
-    title: "Broken Public Bench",
-    location: "Central Park, East Entrance",
-    description: "Wooden slats on public bench are broken, creating a safety hazard.",
-    status: "resolved",
-    date: "2023-03-10",
-    reportedBy: "Jennifer Lee",
-    reporterContact: "jen.lee@example.com",
-    images: ["/placeholder.svg"]
+    id: "comp-126",
+    title: "Graffiti on Public Building",
+    description: "Offensive graffiti on the wall of public library",
+    location: "101 Library Lane, Downtown",
+    dateSubmitted: new Date(2023, 3, 5),
+    status: "rejected",
+    priority: "low",
+    imageUrl: "https://images.unsplash.com/photo-1583396060233-3d13dbadf242?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z3JhZmZpdGl8ZW58MHx8MHx8fDA%3D",
+    userId: "user-126",
+    userName: "Emily Davis",
+    userContact: "emily@example.com",
+    category: "vandalism"
   },
   {
-    id: "c7",
-    title: "Damaged Road Sign",
-    location: "Pine Avenue, Corner of 5th",
-    description: "Stop sign is bent and difficult to see from approaching vehicles.",
+    id: "comp-127",
+    title: "Broken Park Bench",
+    description: "Wooden bench in city park is broken and unsafe",
+    location: "Central Park, North Entrance",
+    dateSubmitted: new Date(),
     status: "pending",
-    date: "2023-04-01",
-    reportedBy: "Michael Brown",
-    reporterContact: "m.brown@example.com",
-    images: ["/placeholder.svg"]
+    priority: "low",
+    imageUrl: "https://images.unsplash.com/photo-1573551565922-aec98de55fe2?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8YnJva2VuJTIwYmVuY2h8ZW58MHx8MHx8fDA%3D",
+    userId: "user-127",
+    userName: "Robert Wilson",
+    userContact: "robert@example.com",
+    category: "parks"
+  },
+  {
+    id: "comp-128",
+    title: "Water Main Break",
+    description: "Water flooding the street from broken main",
+    location: "222 River Road, Riverside",
+    dateSubmitted: new Date(),
+    status: "inProgress",
+    priority: "high",
+    imageUrl: "https://images.unsplash.com/photo-1626179733873-4296cbdad4c0?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8d2F0ZXIlMjBtYWlufGVufDB8fDB8fHww",
+    userId: "user-128",
+    userName: "Amanda Martinez",
+    userContact: "amanda@example.com",
+    category: "water"
   }
 ];
 
+// Status options with colors and icons
+const statusMap = {
+  pending: { label: "Pending", color: "bg-amber-100 text-amber-700", icon: <Clock className="h-4 w-4" /> },
+  inProgress: { label: "In Progress", color: "bg-blue-100 text-blue-700", icon: <Clock className="h-4 w-4" /> },
+  resolved: { label: "Resolved", color: "bg-green-100 text-green-700", icon: <CheckCircle className="h-4 w-4" /> },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-700", icon: <AlertTriangle className="h-4 w-4" /> }
+};
+
+// Category options
+const categoryOptions = [
+  { value: "all", label: "All Categories" },
+  { value: "waste", label: "Waste Management" },
+  { value: "roads", label: "Roads & Sidewalks" },
+  { value: "lighting", label: "Street Lighting" },
+  { value: "parks", label: "Parks & Recreation" },
+  { value: "water", label: "Water & Sewage" },
+  { value: "vandalism", label: "Vandalism" },
+  { value: "other", label: "Other" }
+];
+
+// Priority badges
+const priorityBadges = {
+  low: <Badge variant="outline" className="bg-gray-100">Low</Badge>,
+  medium: <Badge variant="outline" className="bg-amber-100">Medium</Badge>,
+  high: <Badge variant="outline" className="bg-red-100">High</Badge>
+};
+
 const ViewComplaints = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedComplaint, setSelectedComplaint] = useState<typeof mockComplaints[0] | null>(null);
+  const [dateFilter, setDateFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [selectedComplaints, setSelectedComplaints] = useState<string[]>([]);
   
-  const filteredComplaints = mockComplaints.filter(complaint => {
-    const matchesSearch = 
-      complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      complaint.reportedBy.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = 
-      statusFilter === "all" || complaint.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-  
-  const getStatusIcon = (status: string) => {
-    switch(status) {
-      case "resolved":
-        return <Check className="h-5 w-5 text-green-500" />;
-      case "in-progress":
-        return <Clock className="h-5 w-5 text-yellow-500" />;
-      default:
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
-    }
+  // Filter complaints based on search, status, date, and category
+  const filterComplaints = () => {
+    return mockComplaints.filter(complaint => {
+      // Search filter
+      const matchesSearch = searchQuery === "" || 
+        complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        complaint.userName.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Status filter
+      const matchesStatus = statusFilter === "all" || complaint.status === statusFilter;
+      
+      // Date filter
+      let matchesDate = true;
+      const today = new Date();
+      if (dateFilter === "today") {
+        matchesDate = isToday(complaint.dateSubmitted);
+      } else if (dateFilter === "week") {
+        matchesDate = isAfter(complaint.dateSubmitted, subDays(today, 7));
+      } else if (dateFilter === "month") {
+        matchesDate = isAfter(complaint.dateSubmitted, new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()));
+      }
+      
+      // Category filter
+      const matchesCategory = categoryFilter === "all" || complaint.category === categoryFilter;
+      
+      return matchesSearch && matchesStatus && matchesDate && matchesCategory;
+    }).sort((a, b) => {
+      // Sort by selected option
+      if (sortBy === "newest") {
+        return isBefore(a.dateSubmitted, b.dateSubmitted) ? 1 : -1;
+      } else if (sortBy === "oldest") {
+        return isAfter(a.dateSubmitted, b.dateSubmitted) ? 1 : -1;
+      } else if (sortBy === "priority") {
+        const priorityMap = { high: 3, medium: 2, low: 1 };
+        return priorityMap[b.priority as keyof typeof priorityMap] - priorityMap[a.priority as keyof typeof priorityMap];
+      }
+      return 0;
+    });
   };
   
-  const getStatusBadge = (status: string) => {
-    let classes;
-    let label;
-    
-    switch(status) {
-      case "resolved":
-        classes = "bg-green-100 text-green-800";
-        label = "Resolved";
-        break;
-      case "in-progress":
-        classes = "bg-yellow-100 text-yellow-800";
-        label = "In Progress";
-        break;
-      default:
-        classes = "bg-red-100 text-red-800";
-        label = "Pending";
-    }
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${classes}`}>
-        {label}
-      </span>
+  const filteredComplaints = filterComplaints();
+  
+  // Toggle complaint selection for bulk actions
+  const toggleComplaintSelection = (id: string) => {
+    setSelectedComplaints(prev => 
+      prev.includes(id) 
+        ? prev.filter(complaintId => complaintId !== id) 
+        : [...prev, id]
     );
   };
   
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Check if all visible complaints are selected
+  const allSelected = filteredComplaints.length > 0 && 
+    filteredComplaints.every(complaint => selectedComplaints.includes(complaint.id));
+  
+  // Toggle selection of all visible complaints
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedComplaints([]);
+    } else {
+      setSelectedComplaints(filteredComplaints.map(complaint => complaint.id));
+    }
+  };
+  
+  // Reset all filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setDateFilter("all");
+    setCategoryFilter("all");
+    setSortBy("newest");
+  };
+  
+  // Handle view complaint details
+  const handleViewComplaint = (id: string) => {
+    navigate(`/official/update-complaint/${id}`);
   };
   
   return (
     <OfficialLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">View All Complaints</h1>
-          <p className="text-gray-600">Manage and update reported cleanliness issues</p>
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4 md:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by title, location, or reporter"
-              className="pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex-shrink-0 w-full md:w-48">
-            <Select
-              defaultValue="all"
-              onValueChange={(value) => setStatusFilter(value)}
-            >
-              <SelectTrigger>
-                <div className="flex items-center">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Complaints</CardTitle>
-                <CardDescription>
-                  {filteredComplaints.length} complaint{filteredComplaints.length !== 1 ? 's' : ''} found
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredComplaints.length > 0 ? (
-                  <div className="space-y-4">
-                    {filteredComplaints.map((complaint) => (
-                      <div 
-                        key={complaint.id} 
-                        className={`p-4 border rounded-lg hover:border-green-500 cursor-pointer transition-colors ${
-                          selectedComplaint?.id === complaint.id ? "border-green-500 bg-green-50" : ""
-                        }`}
-                        onClick={() => setSelectedComplaint(complaint)}
-                      >
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-gray-800">{complaint.title}</h3>
-                          {getStatusBadge(complaint.status)}
-                        </div>
-                        <p className="text-sm text-gray-500 mb-2">{complaint.location}</p>
-                        <p className="text-sm text-gray-600 line-clamp-2 mb-2">{complaint.description}</p>
-                        <div className="flex flex-wrap gap-2 justify-between items-center text-xs text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center">
-                              <Calendar className="h-3 w-3 mr-1" />
-                              {formatDate(complaint.date)}
-                            </span>
-                            <span className="flex items-center">
-                              <User className="h-3 w-3 mr-1" />
-                              {complaint.reportedBy}
-                            </span>
-                          </div>
-                          <Button 
-                            asChild
-                            size="sm" 
-                            className="text-civic-green hover:text-white hover:bg-civic-green"
-                          >
-                            <Link to={`/official/update-complaint/${complaint.id}`}>
-                              Update Status
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No complaints matching your filters</p>
-                    {searchTerm || statusFilter !== "all" ? (
-                      <Button 
-                        variant="outline" 
-                        className="mt-4"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setStatusFilter("all");
-                        }}
-                      >
-                        Clear Filters
-                      </Button>
-                    ) : null}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
+      <div className="container mx-auto py-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Complaint Details</CardTitle>
-                <CardDescription>
-                  Selected complaint information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selectedComplaint ? (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        {getStatusIcon(selectedComplaint.status)}
-                        <h3 className="font-medium">{selectedComplaint.title}</h3>
-                      </div>
-                      <div className="text-sm text-gray-500 mb-2 flex items-center">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {selectedComplaint.location}
-                      </div>
-                      <p className="text-sm">{selectedComplaint.description}</p>
-                    </div>
-                    
-                    <div className="pt-2 border-t space-y-2">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <div className="text-xs text-gray-500">Date Reported</div>
-                          <div className="text-sm">{formatDate(selectedComplaint.date)}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <div className="text-xs text-gray-500">Reported By</div>
-                          <div className="text-sm">{selectedComplaint.reportedBy}</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 text-gray-500 mr-2" />
-                        <div>
-                          <div className="text-xs text-gray-500">Contact</div>
-                          <div className="text-sm">{selectedComplaint.reporterContact}</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="pt-2 border-t">
-                      <h4 className="text-sm font-medium mb-2">Images</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {selectedComplaint.images.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`Image for ${selectedComplaint.title}`}
-                            className="w-full h-24 object-cover rounded-md"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      asChild
-                      className="w-full bg-civic-green hover:bg-green-600"
-                    >
-                      <Link to={`/official/update-complaint/${selectedComplaint.id}`}>
-                        Update Status
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">Select a complaint to view its details</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <h1 className="text-2xl font-bold text-gray-800">Citizen Complaints</h1>
+            <p className="text-gray-600">Manage and respond to citizen-reported issues</p>
           </div>
         </div>
+        
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search complaints..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              
+              {/* Status filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="inProgress">In Progress</SelectItem>
+                  <SelectItem value="resolved">Resolved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Date filter */}
+              <Select value={dateFilter} onValueChange={setDateFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by date" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Category filter */}
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-4">
+              <div className="flex items-center mb-4 sm:mb-0">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={resetFilters}
+                  className="text-sm"
+                >
+                  Reset Filters
+                </Button>
+                <div className="ml-4 text-sm text-gray-500">
+                  {filteredComplaints.length} {filteredComplaints.length === 1 ? "complaint" : "complaints"} found
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                    <SelectItem value="priority">Priority (High to Low)</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={showBulkActions ? "bg-muted" : ""}
+                  onClick={() => setShowBulkActions(!showBulkActions)}
+                >
+                  {showBulkActions ? "Hide Bulk Actions" : "Bulk Actions"}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {filteredComplaints.length > 0 ? (
+          <div className="grid gap-4">
+            {showBulkActions && (
+              <Card className="border-dashed border-2 border-blue-200 bg-blue-50">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="select-all" 
+                        checked={allSelected}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                      <label 
+                        htmlFor="select-all" 
+                        className="text-sm font-medium"
+                      >
+                        {selectedComplaints.length === 0 
+                          ? "Select all complaints" 
+                          : `${selectedComplaints.length} selected`}
+                      </label>
+                    </div>
+                    
+                    {selectedComplaints.length > 0 && (
+                      <div className="flex space-x-2">
+                        <Button variant="outline" size="sm">
+                          Update Status
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Assign
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          Export
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {filteredComplaints.map((complaint) => (
+              <Card key={complaint.id} className="overflow-hidden">
+                <div className="flex flex-col md:flex-row">
+                  {/* Image thumbnail (if available) */}
+                  {complaint.imageUrl && (
+                    <div className="md:w-48 h-48 flex-shrink-0">
+                      <img 
+                        src={complaint.imageUrl} 
+                        alt={complaint.title} 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Content */}
+                  <div className="flex-1 p-6">
+                    <div className="flex flex-col md:flex-row justify-between mb-3">
+                      {/* Left side: Title and status */}
+                      <div>
+                        <div className="flex items-center">
+                          {showBulkActions && (
+                            <Checkbox 
+                              className="mr-2" 
+                              checked={selectedComplaints.includes(complaint.id)} 
+                              onCheckedChange={() => toggleComplaintSelection(complaint.id)}
+                            />
+                          )}
+                          <h3 className="text-lg font-semibold">{complaint.title}</h3>
+                          <div className={`ml-3 px-2 py-1 rounded-full text-xs ${statusMap[complaint.status as keyof typeof statusMap].color} flex items-center`}>
+                            {statusMap[complaint.status as keyof typeof statusMap].icon}
+                            <span className="ml-1">{statusMap[complaint.status as keyof typeof statusMap].label}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{complaint.description}</p>
+                      </div>
+                      
+                      {/* Right side: priority badge */}
+                      <div className="mt-2 md:mt-0">
+                        {priorityBadges[complaint.priority as keyof typeof priorityBadges]}
+                      </div>
+                    </div>
+                    
+                    {/* Details grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm mt-3">
+                      <div className="flex items-center text-gray-600">
+                        <MapPin className="h-4 w-4 mr-1" />
+                        <span>{complaint.location}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-gray-600">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <span>{format(complaint.dateSubmitted, "PPP")}</span>
+                      </div>
+                      
+                      <div className="flex items-center text-gray-600">
+                        <User className="h-4 w-4 mr-1" />
+                        <span>{complaint.userName}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex justify-between items-center mt-4 pt-3 border-t">
+                      <div className="flex items-center text-gray-600">
+                        <MailIcon className="h-4 w-4 mr-1" />
+                        <span className="text-sm">{complaint.userContact}</span>
+                      </div>
+                      
+                      <div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="ml-2"
+                          onClick={() => handleViewComplaint(complaint.id)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-6 text-center">
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold">No complaints found</h3>
+                <p className="text-gray-600">Try adjusting your filters or search query</p>
+                <Button onClick={resetFilters} className="mt-4">
+                  Reset Filters
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </OfficialLayout>
   );
