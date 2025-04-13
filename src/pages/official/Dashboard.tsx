@@ -61,7 +61,7 @@ const recentComplaints = [
   },
   {
     id: "c2",
-    title: "Broken Street Light",
+    title: "Dry Waste",
     location: "Park Avenue, Near City Mall",
     status: "pending",
     date: "2023-04-03",
@@ -69,7 +69,7 @@ const recentComplaints = [
   },
   {
     id: "c3",
-    title: "Pothole in Road",
+    title: "Unclean Road",
     location: "Oak Street, Near School",
     status: "in-progress",
     date: "2023-03-28",

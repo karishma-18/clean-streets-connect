@@ -123,12 +123,12 @@ const statusMap = {
 // Category options
 const categoryOptions = [
   { value: "all", label: "All Categories" },
-  { value: "waste", label: "Waste Management" },
+  // { value: "waste", label: "Waste Management" },
   { value: "roads", label: "Roads & Sidewalks" },
-  { value: "lighting", label: "Street Lighting" },
-  { value: "parks", label: "Parks & Recreation" },
-  { value: "water", label: "Water & Sewage" },
-  { value: "vandalism", label: "Vandalism" },
+  // { value: "lighting", label: "Street Lighting" },
+  // { value: "parks", label: "Parks & Recreation" },
+  // { value: "water", label: "Water & Sewage" },
+  // { value: "vandalism", label: "Vandalism" },
   { value: "other", label: "Other" }
 ];
 

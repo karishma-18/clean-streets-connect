@@ -28,7 +28,7 @@ const mockComplaints = [
   },
   {
     id: "c2",
-    title: "Broken Street Light",
+    title: "Dry Waste",
     location: "Park Avenue, Near City Mall",
     description: "Street light is broken causing darkness in the area at night. Creating safety issues.",
     status: "pending",
@@ -39,7 +39,7 @@ const mockComplaints = [
   },
   {
     id: "c3",
-    title: "Pothole in Road",
+    title: "Unclean Road",
     location: "Oak Street, Near School",
     description: "Large pothole in the middle of the road causing traffic problems and potential vehicle damage.",
     status: "resolved",
@@ -50,7 +50,7 @@ const mockComplaints = [
   },
   {
     id: "c4",
-    title: "Graffiti on Public Wall",
+    title: "Plastic waste",
     location: "River Walk, Near Bridge",
     description: "Inappropriate graffiti on the public wall. Needs to be cleaned.",
     status: "in-progress",
@@ -61,7 +61,7 @@ const mockComplaints = [
   },
   {
     id: "c5",
-    title: "Overgrown Vegetation Blocking Sidewalk",
+    title: "Fallen Leaves",
     location: "Maple Street, Near Park",
     description: "Vegetation from empty lot has overgrown and is blocking the sidewalk.",
     status: "resolved",

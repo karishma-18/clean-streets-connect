@@ -138,12 +138,12 @@ const GiveComplaint = () => {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="waste">Waste Management</SelectItem>
+                    {/* <SelectItem value="waste">Waste Management</SelectItem> */}
+                    {/* <SelectItem value="roads">Roads & Sidewalks</SelectItem> */}
+                    {/* <SelectItem value="lighting">Street Lighting</SelectItem> */}
+                    {/* <SelectItem value="parks">Parks & Recreation</SelectItem> */}
+                    {/* <SelectItem value="water">Water & Sewage</SelectItem>  */}
                     <SelectItem value="roads">Roads & Sidewalks</SelectItem>
-                    <SelectItem value="lighting">Street Lighting</SelectItem>
-                    <SelectItem value="parks">Parks & Recreation</SelectItem>
-                    <SelectItem value="water">Water & Sewage</SelectItem>
-                    <SelectItem value="vandalism">Vandalism</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
